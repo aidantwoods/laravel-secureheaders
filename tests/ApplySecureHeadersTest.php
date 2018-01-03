@@ -12,40 +12,78 @@ use Symfony\Component\HttpFoundation\Response;
 class ApplySecureHeadersTest extends TestCase
 {
     /**
-     * Ensure that the middleware adds the appropriate headers.
+     * Ensure that the middleware adds the base headers.
      *
      * @return void
      */
-    public function testMiddlewareAddsAppropriateHeaders()
+    public function testMiddlewareAddsBaseHeaders()
+    {
+        $result = $this->applySecureHeadersWithConfig(new Response, []);
+        $this->assertBaseHeadersPresent($result->headers->all());
+    }
+
+    /**
+     * Ensure that safe-mode neuters hsts.
+     *
+     * @return void
+     */
+    public function testHstsAndSafeMode()
     {
         // configuration
-        $map = [
-            ['secure-headers.csp', [], ['csp' => []]],
+        $configMap = [
             ['secure-headers.hsts.enabled', false, true],
             ['secure-headers.safeMode', false, true],
         ];
 
+        $result  = $this->applySecureHeadersWithConfig(new Response, $configMap);
+        $headers = $result->headers->all();
+
+        $this->assertArrayHasKey('strict-transport-security', $headers);
+        $this->assertSame($headers['strict-transport-security'][0], 'max-age=86400');
+        $this->assertBaseHeadersPresent($headers);
+    }
+
+    /**
+     * Assert base headers are present given an array of headers.
+     *
+     * @param array<string, string[]> $headers
+     * @return void
+     */
+    private function assertBaseHeadersPresent(array $headers)
+    {
+        $this->assertArrayHasKey('x-permitted-cross-domain-policies', $headers);
+        $this->assertArrayHasKey('x-content-type-options', $headers);
+        $this->assertArrayHasKey('expect-ct', $headers);
+        $this->assertArrayHasKey('referrer-policy', $headers);
+        $this->assertArrayHasKey('x-xss-protection', $headers);
+        $this->assertArrayHasKey('x-frame-options', $headers);
+    }
+
+    /**
+     * Apply SecureHeaders from the given config to a Response.
+     *
+     * @param Response $response
+     * @param ?array $configMap
+     * @return Response
+     */
+    private function applySecureHeadersWithConfig(
+        Response $response,
+        ?array $configMap = null
+    ) {
         $config = $this->createMock(Repository::class);
-        $config->method('get')->will($this->returnValueMap($map));
+        if (isset($configMap)) {
+            $config->method('get')->will($this->returnValueMap($configMap));
+        }
         // return default (second arg) if not in configuration
         $config->method('get')->will($this->returnArgument(1));
 
-        $request = new Request();
+        $secureHeaders = new SecureHeaders;
+        $secureHeaders->errorReporting(false);
+        $middleware    = new ApplySecureHeaders($config, $secureHeaders);
 
-        $response = new Response();
-        $response->headers->set('set-cookie', 'someCookieToIgnore');
-
-        $secureHeaders = new SecureHeaders();
-
-        $middleware = new ApplySecureHeaders($config, $secureHeaders);
-
-        $result = $middleware->handle($request, function ($foo) use ($response) {
-            return $response;
-        });
-
-        $headers = $result->headers->all();
-
-        $this->assertArrayHasKey('x-xss-protection', $headers);
-        $this->assertArrayHasKey('x-frame-options', $headers);
+        return $middleware->handle(
+            new Request,
+            function () use ($response) { return $response; }
+        );
     }
 }
