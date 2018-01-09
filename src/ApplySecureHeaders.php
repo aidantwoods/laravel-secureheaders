@@ -49,6 +49,7 @@ class ApplySecureHeaders
         $this->setHsts();
         $this->setCsp();
         $this->setMode();
+        $this->setExpectCT();
 
         $adapter = new Adapter($response);
 
@@ -111,6 +112,22 @@ class ApplySecureHeaders
 
         if ($this->config->get('secure-headers.strictMode', false)) {
             $this->headers->strictMode();
+        }
+    }
+
+    /**
+     * Set any Expect-CT headers.
+     *
+     * @return void
+     */
+    private function setExpectCT()
+    {
+        if ($expectCT = $this->config->get('secure-headers.expectCT', false)) {
+            $this->headers->expectCT(
+                array_get($expectCT, 'maxAge'),
+                array_get($expectCT, 'enforce'),
+                array_get($expectCT, 'reportUri')
+            );
         }
     }
 }

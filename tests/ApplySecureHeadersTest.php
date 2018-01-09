@@ -274,6 +274,24 @@ class ApplySecureHeadersTest extends TestCase
     }
 
     /**
+     * Ensure that the middleware adds the expect-ct headers.
+     *
+     * @return void
+     */
+    public function testMiddlewareAddsExpectCTHeaders()
+    {
+        $time = time();
+        $config = [
+            'expectCT.maxAge' => $time,
+        ];
+
+        $response = $this->applySecureHeadersWithConfig(new Response(), $config);
+        $headers = $response->headers->all();
+
+        $this->assertEquals("max-age={$time}", $headers['expect-ct'][0]);
+    }
+
+    /**
      * Apply SecureHeaders from the given config to a Response.
      *
      * @param Response $response
