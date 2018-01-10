@@ -79,22 +79,24 @@ class ApplySecureHeaders
      */
     private function setHsts()
     {
-        if ($hsts = $this->config->get('secure-headers.hsts', false)) {
-            if (isset($hsts['maxAge'])) {
-                $this->headers->hsts($hsts['maxAge']);
-            } elseif (isset($hsts['enabled'])) {
-                $this->headers->hsts();
-            } else {
-                return;
-            }
+        if (!$hsts = $this->config->get('secure-headers.hsts', false)) {
+            return;
+        }
 
-            if (isset($hsts['includeSubDomains'])) {
-                $this->headers->hstsSubdomains($hsts['includeSubDomains']);
-            }
+        if (isset($hsts['maxAge'])) {
+            $this->headers->hsts($hsts['maxAge']);
+        } elseif (isset($hsts['enabled'])) {
+            $this->headers->hsts();
+        } else {
+            return;
+        }
 
-            if (isset($hsts['preload'])) {
-                $this->headers->hstsPreload($hsts['preload']);
-            }
+        if (isset($hsts['includeSubDomains'])) {
+            $this->headers->hstsSubdomains($hsts['includeSubDomains']);
+        }
+
+        if (isset($hsts['preload'])) {
+            $this->headers->hstsPreload($hsts['preload']);
         }
     }
 
@@ -121,12 +123,14 @@ class ApplySecureHeaders
      */
     private function setExpectCT()
     {
-        if ($expectCT = $this->config->get('secure-headers.expectCT', false)) {
-            $this->headers->expectCT(
-                array_get($expectCT, 'maxAge'),
-                array_get($expectCT, 'enforce'),
-                array_get($expectCT, 'reportUri')
-            );
+        if (!$expectCT = $this->config->get('secure-headers.expectCT', false)) {
+            return;
         }
+
+        $this->headers->expectCT(
+            array_get($expectCT, 'maxAge'),
+            array_get($expectCT, 'enforce'),
+            array_get($expectCT, 'reportUri')
+        );
     }
 }

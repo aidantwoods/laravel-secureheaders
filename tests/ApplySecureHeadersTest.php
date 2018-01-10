@@ -29,7 +29,7 @@ class ApplySecureHeadersTest extends TestCase
      */
     public function testHsts()
     {
-        // configuration
+        // Configuration
         $configMap = [
             'hsts.enabled' => true,
         ];
@@ -49,9 +49,11 @@ class ApplySecureHeadersTest extends TestCase
      */
     public function testHstsMaxAge()
     {
-        // configuration
+        // Configuration
         $configMap = [
-            'hsts.maxAge' => 1337,
+            'hsts' => [
+                'maxAge' => 1337,
+            ],
         ];
 
         $result  = $this->applySecureHeadersWithConfig(new Response, $configMap);
@@ -69,11 +71,12 @@ class ApplySecureHeadersTest extends TestCase
      */
     public function testHstsInvalid()
     {
-        // configuration
+        // Configuration needs `maxAge` or `enabled` (for default maxAge)
         $configMap = [
-            // needs `maxAge` or `enabled` (for default maxAge)
-            'hsts.includeSubDomains' => true,
-            'hsts.preload' => true,
+            'hsts' => [
+                'includeSubDomains' => true,
+                'preload' => true,
+            ],
         ];
 
         $result  = $this->applySecureHeadersWithConfig(new Response, $configMap);
@@ -90,10 +93,12 @@ class ApplySecureHeadersTest extends TestCase
      */
     public function testHstsSubdomains()
     {
-        // configuration
+        // Configuration
         $configMap = [
-            'hsts.enabled' => true,
-            'hsts.includeSubDomains' => true,
+            'hsts' => [
+                'enabled' => true,
+                'includeSubDomains' => true,
+            ],
         ];
 
         $result  = $this->applySecureHeadersWithConfig(new Response, $configMap);
@@ -111,10 +116,12 @@ class ApplySecureHeadersTest extends TestCase
      */
     public function testHstsPreload()
     {
-        // configuration
+        // Configuration
         $configMap = [
-            'hsts.enabled' => true,
-            'hsts.preload' => true,
+            'hsts' => [
+                'enabled' => true,
+                'preload' => true,
+            ],
         ];
 
         $result  = $this->applySecureHeadersWithConfig(new Response, $configMap);
@@ -132,11 +139,13 @@ class ApplySecureHeadersTest extends TestCase
      */
     public function testHstsSubdomainsAndPreload()
     {
-        // configuration
+        // Configuration
         $configMap = [
-            'hsts.enabled' => true,
-            'hsts.includeSubDomains' => true,
-            'hsts.preload' => true,
+            'hsts' => [
+                'enabled' => true,
+                'includeSubDomains' => true,
+                'preload' => true,
+            ],
         ];
 
         $result  = $this->applySecureHeadersWithConfig(new Response, $configMap);
@@ -154,11 +163,11 @@ class ApplySecureHeadersTest extends TestCase
      */
     public function testHstsAndSafeMode()
     {
-        $response = $this->applySecureHeadersWithConfig(new Response());
-        $headers = $response->headers->all();
-        // configuration
+        // Configuration
         $configMap = [
-            'hsts.enabled' => true,
+            'hsts' => [
+                'enabled' => true,
+            ],
             'safeMode' => true,
         ];
 
@@ -179,7 +188,9 @@ class ApplySecureHeadersTest extends TestCase
     {
         $time = time();
         $config = [
-            'expectCT.maxAge' => $time,
+            'expectCT' => [
+                'maxAge' => $time,
+            ],
         ];
 
         $response = $this->applySecureHeadersWithConfig(new Response, $config);
@@ -197,7 +208,7 @@ class ApplySecureHeadersTest extends TestCase
      */
     public function testStrictModeAndSafeMode()
     {
-        // configuration
+        // Configuration
         $configMap = [
             'strictMode' => true,
             'safeMode' => true,
@@ -220,7 +231,7 @@ class ApplySecureHeadersTest extends TestCase
      */
     public function testStrictMode()
     {
-        // configuration
+        // Configuration
         $configMap = [
             'strictMode' => true,
         ];
@@ -250,7 +261,7 @@ class ApplySecureHeadersTest extends TestCase
      */
     public function testCSP()
     {
-        // configuration
+        // Configuration
         $configMap = [
             'csp' => [
                 'default' => 'self',
@@ -278,7 +289,7 @@ class ApplySecureHeadersTest extends TestCase
      */
     public function testCSPRO()
     {
-        // configuration
+        // Configuration
         $configMap = [
             'cspro' => [
                 'default' => 'self',
@@ -353,8 +364,17 @@ class ApplySecureHeadersTest extends TestCase
         return $middleware->handle(new Request, function () use ($response) { return $response; });
     }
 
+    /**
+     * Fill (but don't mutate) an array using dot notation.
+     *
+     * @param array $array
+     * @param string $key
+     * @param mixed $value
+     * @return array
+     */
     private static function nonMutatingDataFill(array $array, string $key, $value) {
         data_fill($array, $key, $value);
+
         return $array;
     }
 }
